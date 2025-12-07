@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Question } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -52,11 +52,19 @@ export function QuestionCard({
     const [showResult, setShowResult] = useState(false);
     const [eliminatedOptions, setEliminatedOptions] = useState<number[]>([]);
 
-    // Reset state when question changes
+    // Reset state when question changes, preserving scroll position for mobile
     useEffect(() => {
+        // Save current scroll position before state changes
+        const scrollY = window.scrollY;
+
         setSelectedAnswer(null);
         setShowResult(false);
         setEliminatedOptions([]);
+
+        // Restore scroll position after a microtask to prevent iOS auto-scroll to top
+        queueMicrotask(() => {
+            window.scrollTo(0, scrollY);
+        });
     }, [question.id]);
 
     const handleAnswer = useCallback(
