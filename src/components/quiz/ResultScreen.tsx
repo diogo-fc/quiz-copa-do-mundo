@@ -89,14 +89,41 @@ export function ResultScreen({
                     return;
                 }
 
-                // Add XP to user
+                // Add XP to user with error handling and retry
                 if (result.xpGained > 0) {
-                    await supabase.rpc("add_user_xp", {
+                    let xpUpdateSuccess = false;
+
+                    // First attempt
+                    const { error: xpError } = await supabase.rpc("add_user_xp", {
                         user_uuid: profile.id,
                         xp_amount: result.xpGained,
                     });
+
+                    if (xpError) {
+                        console.error("Error adding XP (attempt 1):", xpError);
+
+                        // Retry once after a short delay
+                        await new Promise(resolve => setTimeout(resolve, 500));
+
+                        const { error: retryError } = await supabase.rpc("add_user_xp", {
+                            user_uuid: profile.id,
+                            xp_amount: result.xpGained,
+                        });
+
+                        if (retryError) {
+                            console.error("Error adding XP (attempt 2):", retryError);
+                            toast.error("Erro ao atualizar XP. Tente novamente mais tarde.");
+                        } else {
+                            xpUpdateSuccess = true;
+                        }
+                    } else {
+                        xpUpdateSuccess = true;
+                    }
+
                     // Refresh profile to update XP in header
-                    refreshProfile();
+                    if (xpUpdateSuccess) {
+                        refreshProfile();
+                    }
                 }
 
                 // Track quiz completion
