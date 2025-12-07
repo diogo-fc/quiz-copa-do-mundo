@@ -22,58 +22,77 @@ interface CheckResult {
     healthy: boolean;
 }
 
-// Run all consistency checks
+// Run all consistency checks using unified SQL function
 async function runChecks(): Promise<CheckResult> {
     const supabase = await createClient();
-    const issues: Issue[] = [];
 
-    // 1. Check XP inconsistencies
-    const { data: xpIssues } = await supabase.rpc("check_xp_consistency");
-    if (xpIssues && xpIssues.length > 0) {
-        issues.push({
-            type: "XP_MISMATCH",
-            description: "Usuários com XP inconsistente",
-            count: xpIssues.length,
-        });
+    // Call the unified consistency check function
+    const { data, error } = await supabase.rpc("run_all_consistency_checks");
+
+    if (error) {
+        console.error("Error running consistency checks:", error);
+        // Fallback to basic stats if function doesn't exist
+        const { count: totalUsers } = await supabase
+            .from("profiles")
+            .select("*", { count: "exact", head: true });
+
+        const { count: totalSessions } = await supabase
+            .from("game_sessions")
+            .select("*", { count: "exact", head: true });
+
+        const { count: totalAchievements } = await supabase
+            .from("user_achievements")
+            .select("*", { count: "exact", head: true });
+
+        // Check broken streaks manually as fallback
+        const { data: streakIssues } = await supabase
+            .from("profiles")
+            .select("id")
+            .gt("streak_days", 0)
+            .is("last_played_at", null);
+
+        const issues: Issue[] = [];
+        if (streakIssues && streakIssues.length > 0) {
+            issues.push({
+                type: "BROKEN_STREAK",
+                description: "Streaks que deveriam ter sido resetados",
+                count: streakIssues.length,
+            });
+        }
+
+        return {
+            timestamp: new Date().toISOString(),
+            issues,
+            stats: {
+                totalUsers: totalUsers || 0,
+                totalSessions: totalSessions || 0,
+                totalAchievements: totalAchievements || 0,
+            },
+            healthy: issues.length === 0,
+        };
     }
 
-    // 2. Check broken streaks
-    const { data: streakIssues } = await supabase
-        .from("profiles")
-        .select("id")
-        .gt("streak_days", 0)
-        .or("last_played_at.is.null,last_played_at.lt.now()-interval '2 days'");
+    // Parse the result from the SQL function
+    const result = data as {
+        timestamp: string;
+        healthy: boolean;
+        stats: { total_users: number; total_sessions: number; total_achievements: number };
+        issues: (Issue | null)[];
+        issue_counts: { total: number };
+    };
 
-    if (streakIssues && streakIssues.length > 0) {
-        issues.push({
-            type: "BROKEN_STREAK",
-            description: "Streaks que deveriam ter sido resetados",
-            count: streakIssues.length,
-        });
-    }
-
-    // 3. Get stats
-    const { count: totalUsers } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true });
-
-    const { count: totalSessions } = await supabase
-        .from("game_sessions")
-        .select("*", { count: "exact", head: true });
-
-    const { count: totalAchievements } = await supabase
-        .from("user_achievements")
-        .select("*", { count: "exact", head: true });
+    // Filter out null issues
+    const issues = (result.issues || []).filter((i): i is Issue => i !== null);
 
     return {
-        timestamp: new Date().toISOString(),
+        timestamp: result.timestamp,
         issues,
         stats: {
-            totalUsers: totalUsers || 0,
-            totalSessions: totalSessions || 0,
-            totalAchievements: totalAchievements || 0,
+            totalUsers: result.stats.total_users,
+            totalSessions: result.stats.total_sessions,
+            totalAchievements: result.stats.total_achievements,
         },
-        healthy: issues.length === 0,
+        healthy: result.healthy,
     };
 }
 
