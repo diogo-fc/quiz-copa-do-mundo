@@ -65,6 +65,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         favorite_team: null,
         xp: 0,
         level: 1,
+        streak_days: 0,
+        last_played_at: null,
         created_at: new Date().toISOString(),
     });
 
