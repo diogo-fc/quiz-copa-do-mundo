@@ -11,6 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://quiz-copa-do-mundo.vercel.app"),
   title: {
     default: "Copa Quiz Battle - Quiz sobre Copas do Mundo",
     template: "%s | Copa Quiz Battle",
@@ -49,8 +50,8 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    icon: "/icon.png",
+    apple: "/icon.png",
   },
 };
 
