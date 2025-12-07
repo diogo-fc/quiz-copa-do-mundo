@@ -1,0 +1,30 @@
+{
+    "name": "Copa Quiz Battle",
+    "short_name": "QuizCopa",
+    "description": "Quiz multiplayer sobre a história das Copas do Mundo",
+    "start_url": "/quiz",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#0a0a0a",
+    "theme_color": "#0a0a0a",
+    "categories": [
+        "games",
+        "sports",
+        "entertainment"
+    ],
+    "lang": "pt-BR",
+    "icons": [
+        {
+            "src": "/icons/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icons/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
