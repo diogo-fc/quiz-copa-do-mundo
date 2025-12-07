@@ -32,11 +32,20 @@ export const metadata: Metadata = {
     description: "Quiz multiplayer sobre a história das Copas do Mundo",
     type: "website",
     locale: "pt_BR",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Copa Quiz Battle - Quiz sobre Copas do Mundo",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Copa Quiz Battle",
     description: "Quiz multiplayer sobre a história das Copas do Mundo",
+    images: ["/og-image.png"],
   },
   manifest: "/manifest.json",
   icons: {
