@@ -51,13 +51,85 @@ Copa Quiz Battle é um jogo de perguntas e respostas multiplayer sobre a histór
 
 | Elemento | Mecânica |
 |----------|----------|
-| **XP** | Ganho por acerto, bônus por streak, multiplicador por dificuldade |
-| **Níveis** | 1-100 com títulos: Reserva → Titular → Craque → Lenda |
+| **XP** | Ganho por acerto, bônus por streak, multiplicador por modo |
+| **Níveis** | 1-100+ com títulos: Novato → Reserva → Titular → Craque → Lenda |
 | **Conquistas** | Badges colecionáveis (ex: "Conhecedor de Finais", "Expert Brasil") |
 | **Ranking Global** | Tabela semanal e mensal. Reset no início da Copa. |
 | **Ranking Amigos** | Comparação apenas entre amigos conectados |
 
+#### 3.2.1 Fórmula de Pontuação (Score)
+
+```
+Score = BASE_POINTS × DIFFICULTY_MULTIPLIER + SPEED_BONUS + STREAK_BONUS
+
+Onde:
+- BASE_POINTS = 100
+- DIFFICULTY_MULTIPLIER = { facil: 1.0, medio: 1.5, dificil: 2.0 }
+- SPEED_BONUS = (timeRemaining / totalTime) × 50  (máximo 50 pontos)
+- STREAK_BONUS = { 3 acertos: +25, 5 acertos: +50, 10 acertos: +100, 15 acertos: +200 }
+```
+
+#### 3.2.2 Fórmula de XP
+
+```
+XP = FLOOR(Score × MODE_MULTIPLIER × 0.1)
+
+MODE_MULTIPLIER:
+- treino: 0.5   (modo prática, menor XP)
+- desafio: 1.0  (modo padrão)
+- diario: 1.2   (bônus por jogar diariamente)
+- duelo: 1.5    (maior risco, maior recompensa)
+```
+
+#### 3.2.3 Fórmula de Nível
+
+```
+XP_necessário_para_nível_N = FLOOR(100 × N^1.5)
+
+Exemplos:
+- Nível 2: 283 XP
+- Nível 5: 1.118 XP
+- Nível 10: 3.162 XP
+- Nível 25: 12.500 XP
+- Nível 50: 35.355 XP
+- Nível 100: 100.000 XP
+```
+
+#### 3.2.4 Títulos por Nível
+
+| Nível | Título |
+|-------|--------|
+| 1-9 | Novato 🌱 |
+| 10-24 | Reserva 🎽 |
+| 25-49 | Titular ⚽ |
+| 50-99 | Craque 🌟 |
+| 100+ | Lenda 👑 |
+
+#### 3.2.5 Sistema de Streak (Dias Consecutivos)
+
+- Jogou **hoje**: mantém streak atual
+- Jogou **ontem**: incrementa streak em 1
+- Pulou um dia: reseta streak para 1
+- Nunca jogou: streak = 0
+#### 3.2.6 Conquistas (Achievements)
+
+| ID | Nome | Condição | Ícone |
+|----|------|----------|-------|
+| `first_quiz` | Estreante | Completar primeiro quiz | 🎯 |
+| `perfect_round` | Rodada Perfeita | Acertar todas no modo Desafio (15/15) | ⭐ |
+| `streak_7` | Dedicado | Jogar 7 dias seguidos | 🔥 |
+| `streak_30` | Fanático | Jogar 30 dias seguidos | 🏆 |
+| `brasil_expert` | Especialista Brasil | Acertar 50 perguntas sobre Brasil | 🇧🇷 |
+| `finals_master` | Mestre das Finais | Acertar 30 perguntas sobre finais | 🥇 |
+| `challenger` | Desafiante | Vencer 10 duelos | ⚔️ |
+| `level_10` | Titular | Alcançar nível 10 | 🎽 |
+| `level_50` | Craque | Alcançar nível 50 | ⚽ |
+| `level_100` | Lenda | Alcançar nível 100 | 👑 |
+| `social_butterfly` | Influenciador | Compartilhar 10 resultados | 📱 |
+| `early_bird` | Madrugador | Jogar quiz diário antes das 8h | 🌅 |
+
 ### 3.3 Sistema Social
+
 
 - Login social (Google)
 - Compartilhar resultados com card visual para Instagram/WhatsApp
