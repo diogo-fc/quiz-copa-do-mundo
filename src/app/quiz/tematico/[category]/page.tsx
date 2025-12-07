@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Question, QuestionCategory } from "@/types";
+import { analytics } from "@/components/GoogleAnalytics";
 
 // Category metadata for display
 const CATEGORY_INFO: Record<
@@ -193,6 +194,9 @@ export default function TematicoQuizPage() {
         };
 
         loadQuestions();
+
+        // Track quiz start with category
+        analytics.quizStart("tematico", category);
     }, [category]);
 
     const handleComplete = (quizResult: QuizResult) => {

@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { ShareCard } from "./ShareCard";
 import { useAuth } from "@/hooks/useAuth";
+import { analytics } from "@/components/GoogleAnalytics";
 
 interface ResultScreenProps {
     result: QuizResult;
@@ -97,6 +98,9 @@ export function ResultScreen({
                     // Refresh profile to update XP in header
                     refreshProfile();
                 }
+
+                // Track quiz completion
+                analytics.quizComplete(mode, result.score, result.correctAnswers);
 
                 // Update daily streak
                 try {

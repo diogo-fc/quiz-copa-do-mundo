@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
 import { Question } from "@/types";
+import { analytics } from "@/components/GoogleAnalytics";
 
 // Sample questions for development (will be replaced with DB fetch)
 const SAMPLE_QUESTIONS: Question[] = [
@@ -168,6 +169,9 @@ export default function TreinoPage() {
         };
 
         loadQuestions();
+
+        // Track quiz start
+        analytics.quizStart("treino");
     }, []);
 
     const handleComplete = (quizResult: QuizResult) => {

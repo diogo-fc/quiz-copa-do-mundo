@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
 import { Question } from "@/types";
+import { analytics } from "@/components/GoogleAnalytics";
 
 // Sample questions for development
 const SAMPLE_QUESTIONS: Question[] = [
@@ -212,6 +213,9 @@ export default function DesafioPage() {
         };
 
         loadQuestions();
+
+        // Track quiz start
+        analytics.quizStart("desafio");
     }, []);
 
     const handleComplete = (quizResult: QuizResult) => {

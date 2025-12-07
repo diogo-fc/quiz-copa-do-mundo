@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { Question } from "@/types";
+import { analytics } from "@/components/GoogleAnalytics";
 
 // Sample daily questions
 const DAILY_QUESTIONS: Question[] = [
@@ -114,6 +115,9 @@ export default function DiarioPage() {
         };
 
         loadDailyQuiz();
+
+        // Track quiz start
+        analytics.quizStart("diario");
     }, [profile?.id]);
 
     const handleComplete = async (quizResult: QuizResult) => {
