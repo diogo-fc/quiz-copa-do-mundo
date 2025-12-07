@@ -20,7 +20,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Check if push notifications are supported
+    // Check if push notifications are supported and sync with database
     useEffect(() => {
         const checkSupport = async () => {
             const supported =
@@ -33,16 +33,39 @@ export function usePushNotifications(): UsePushNotificationsReturn {
             if (supported) {
                 setPermission(Notification.permission);
 
-                // Check if already subscribed (with timeout to prevent hanging)
+                // Check local subscription
+                let hasLocalSubscription = false;
                 try {
-                    // Check if there's already a registration
                     const registrations = await navigator.serviceWorker.getRegistrations();
                     if (registrations.length > 0) {
                         const subscription = await registrations[0].pushManager.getSubscription();
-                        setIsSubscribed(!!subscription);
+                        hasLocalSubscription = !!subscription;
                     }
                 } catch (err) {
-                    console.error("Error checking subscription:", err);
+                    console.error("Error checking local subscription:", err);
+                }
+
+                // Check database subscription
+                let hasDbSubscription = false;
+                try {
+                    const response = await fetch("/api/notifications/check");
+                    if (response.ok) {
+                        const data = await response.json();
+                        hasDbSubscription = data.hasSubscription;
+                    }
+                } catch (err) {
+                    console.error("Error checking DB subscription:", err);
+                }
+
+                // Sync state: if DB says subscribed but local is not, user might need to resubscribe
+                // Show as subscribed only if BOTH local and DB agree
+                // If DB has subscription but local doesn't, show as unsubscribed (local takes precedence)
+                // This forces user to resubscribe to get a fresh local subscription
+                setIsSubscribed(hasLocalSubscription);
+
+                // Log for debugging
+                if (hasDbSubscription && !hasLocalSubscription) {
+                    console.log("Push: DB has subscription but local SW doesn't. User needs to resubscribe.");
                 }
             }
 
@@ -51,6 +74,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
 
         checkSupport();
     }, []);
+
 
     // Request notification permission
     const requestPermission = useCallback(async (): Promise<boolean> => {
