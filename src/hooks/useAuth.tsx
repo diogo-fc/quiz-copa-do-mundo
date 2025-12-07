@@ -178,11 +178,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
             if (!mounted) return;
 
             if (session?.user) {
-                setUser(session.user);
-                const profileData = await fetchProfile(session.user.id);
-                if (mounted) {
-                    setProfile(profileData || createMockProfile(session.user));
-                }
+                // Only update user if it changed
+                setUser(prevUser => {
+                    if (prevUser?.id === session.user.id) {
+                        return prevUser; // Same user, don't trigger re-render
+                    }
+                    return session.user;
+                });
+
+                // Only fetch profile if user changed or profile is null
+                setProfile(prevProfile => {
+                    if (prevProfile?.id === session.user.id) {
+                        return prevProfile; // Same profile, keep it
+                    }
+                    // Fetch new profile asynchronously
+                    fetchProfile(session.user.id).then(profileData => {
+                        if (mounted) {
+                            setProfile(profileData || createMockProfile(session.user));
+                        }
+                    });
+                    return prevProfile; // Keep old profile while loading
+                });
             } else {
                 setUser(null);
                 setProfile(null);
