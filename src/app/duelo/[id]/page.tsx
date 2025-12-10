@@ -51,6 +51,7 @@ export default function DuelPage({ params }: PageProps) {
     // Refs para evitar stale closures
     const scoreRef = useRef(0);
     const correctAnswersRef = useRef(0);
+    const finishDuelRef = useRef<() => void>(() => { });
 
     // Load duel data
     useEffect(() => {
@@ -244,10 +245,13 @@ export default function DuelPage({ params }: PageProps) {
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
     };
 
+    // Atualizar a ref da função finishDuel
+    finishDuelRef.current = finishDuel;
+
     // Timer expired - encerrar duelo imediatamente
     const handleTimeUp = useCallback(() => {
         console.log("[Duelo] Tempo esgotado! Encerrando duelo...");
-        finishDuel();
+        finishDuelRef.current();
     }, []);
 
     if (isLoading) {
