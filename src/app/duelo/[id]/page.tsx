@@ -76,25 +76,42 @@ export default function DuelPage({ params }: PageProps) {
 
     // Polling para atualizar quando oponente entrar (só para challenger esperando)
     useEffect(() => {
-        if (!duel || !duel.isChallenger || duel.opponent_id || gameState !== "waiting") {
+        // Só faz polling se:
+        // 1. Há dados do duelo
+        // 2. O usuário é o challenger
+        // 3. Ainda não tem oponente
+        // 4. Está na tela de espera
+        const shouldPoll = duel && duel.isChallenger && !duel.opponent_id && gameState === "waiting";
+
+        if (!shouldPoll) {
             return;
         }
 
+        console.log("[Polling] Iniciando polling para duelo:", id);
+
         const pollInterval = setInterval(async () => {
+            console.log("[Polling] Verificando atualizações...");
             try {
                 const response = await fetch(`/api/duels/${id}`);
                 const data = await response.json();
 
+                console.log("[Polling] Resposta:", { opponent_id: data.opponent_id, opponent: data.opponent?.name });
+
                 if (response.ok && data.opponent_id) {
+                    console.log("[Polling] Oponente encontrado! Atualizando...");
                     setDuel(data);
                     toast.success(`${data.opponent?.name?.split(" ")[0] || "Alguém"} aceitou o desafio!`);
+                    clearInterval(pollInterval); // Para o polling após encontrar oponente
                 }
             } catch (err) {
-                console.error("Polling error:", err);
+                console.error("[Polling] Erro:", err);
             }
-        }, 5000); // Verifica a cada 5 segundos
+        }, 3000); // Verifica a cada 3 segundos (mais rápido)
 
-        return () => clearInterval(pollInterval);
+        return () => {
+            console.log("[Polling] Parando polling");
+            clearInterval(pollInterval);
+        };
     }, [id, duel?.isChallenger, duel?.opponent_id, gameState]);
 
     // Handle answer
@@ -433,9 +450,27 @@ export default function DuelPage({ params }: PageProps) {
                                             Aguardando oponente aceitar o desafio...
                                         </p>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            Compartilhe o link abaixo para convidar alguém!
+                                            A página atualiza automaticamente quando alguém aceitar.
                                         </p>
                                     </div>
+                                    <Button
+                                        onClick={async () => {
+                                            const response = await fetch(`/api/duels/${id}`);
+                                            const data = await response.json();
+                                            if (response.ok) {
+                                                setDuel(data);
+                                                if (data.opponent_id) {
+                                                    toast.success(`${data.opponent?.name?.split(" ")[0] || "Alguém"} aceitou o desafio!`);
+                                                } else {
+                                                    toast.info("Ninguém aceitou ainda. Compartilhe o link!");
+                                                }
+                                            }
+                                        }}
+                                        variant="secondary"
+                                        className="w-full"
+                                    >
+                                        🔄 Atualizar
+                                    </Button>
                                     <Button onClick={handleShareWhatsApp} variant="outline" className="w-full">
                                         📱 Compartilhar no WhatsApp
                                     </Button>
