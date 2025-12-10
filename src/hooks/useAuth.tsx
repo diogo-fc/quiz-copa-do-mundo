@@ -138,6 +138,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         setUser(null);
         setProfile(null);
+        
+        // Redirecionar para a landing page após logout
+        window.location.href = "/";
     };
 
     // Listen for auth changes
