@@ -115,6 +115,46 @@ export default function DuelPage({ params }: PageProps) {
         };
     }, [id, duel?.isChallenger, duel?.opponent_id, gameState]);
 
+    // Polling para atualizar quando o outro jogador terminar (na tela de resultado)
+    useEffect(() => {
+        // Só faz polling se:
+        // 1. O jogo terminou
+        // 2. Está aguardando o score do oponente
+        const myScore = duel?.isChallenger ? duel?.challenger_score : duel?.opponent_score;
+        const opponentScore = duel?.isChallenger ? duel?.opponent_score : duel?.challenger_score;
+        const shouldPoll = gameState === "finished" && myScore !== null && opponentScore === null;
+
+        if (!shouldPoll || !duel) {
+            return;
+        }
+
+        console.log("[Polling Resultado] Iniciando polling para resultado do duelo:", id);
+
+        const pollInterval = setInterval(async () => {
+            console.log("[Polling Resultado] Verificando se oponente terminou...");
+            try {
+                const response = await fetch(`/api/duels/${id}`);
+                const data = await response.json();
+
+                const newOpponentScore = duel.isChallenger ? data.opponent_score : data.challenger_score;
+
+                if (response.ok && newOpponentScore !== null) {
+                    console.log("[Polling Resultado] Oponente terminou! Score:", newOpponentScore);
+                    setDuel(data);
+                    toast.success("O oponente terminou! Veja o resultado.");
+                    clearInterval(pollInterval);
+                }
+            } catch (err) {
+                console.error("[Polling Resultado] Erro:", err);
+            }
+        }, 5000); // Verifica a cada 5 segundos
+
+        return () => {
+            console.log("[Polling Resultado] Parando polling");
+            clearInterval(pollInterval);
+        };
+    }, [id, gameState, duel?.isChallenger, duel?.challenger_score, duel?.opponent_score]);
+
     // Handle answer
     const handleAnswer = useCallback((answerIndex: number, timeLeft: number) => {
         if (!duel) return;
@@ -204,13 +244,7 @@ export default function DuelPage({ params }: PageProps) {
             const refreshData = await refreshResponse.json();
             setDuel(refreshData);
 
-            toast.success("Você entrou no duelo! Preparando perguntas...");
-
-            // Iniciar o jogo automaticamente após aceitar
-            setTimeout(() => {
-                setGameState("playing");
-                setTimeRemaining(TOTAL_DUEL_TIME);
-            }, 1000);
+            toast.success("Você entrou no duelo! Clique em 'Começar a jogar' quando estiver pronto.");
 
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Erro ao entrar no duelo");
