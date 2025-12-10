@@ -47,6 +47,17 @@ export async function GET(
             questions?.find(q => q.id === qid)
         ).filter(Boolean);
 
+        console.log("[Duels API GET] Returning duel:", {
+            duelId: id,
+            userId: user?.id,
+            challenger_id: duel.challenger_id,
+            opponent_id: duel.opponent_id,
+            isChallenger: user?.id === duel.challenger_id,
+            isOpponent: user?.id === duel.opponent_id,
+            challenger_score: duel.challenger_score,
+            opponent_score: duel.opponent_score,
+        });
+
         return NextResponse.json({
             ...duel,
             questions: orderedQuestions,
@@ -99,26 +110,41 @@ export async function PATCH(
 
         // Handle different actions
         if (action === "join") {
+            console.log("[Duels API] Join request:", { duelId: id, userId: user.id });
+            console.log("[Duels API] Current duel state:", {
+                challenger_id: duel.challenger_id,
+                opponent_id: duel.opponent_id,
+                status: duel.status
+            });
+
             // User is joining as opponent
             if (duel.opponent_id) {
+                console.log("[Duels API] Duel already has opponent:", duel.opponent_id);
                 return NextResponse.json({ error: "Duelo já tem um oponente" }, { status: 400 });
             }
             if (user.id === duel.challenger_id) {
+                console.log("[Duels API] User is challenger, cannot join as opponent");
                 return NextResponse.json({ error: "Você não pode duelar contra si mesmo" }, { status: 400 });
             }
 
-            const { error: updateError } = await supabase
+            const { data: updateData, error: updateError } = await supabase
                 .from("duels")
                 .update({
                     opponent_id: user.id,
                     status: "active",
                 })
-                .eq("id", id);
+                .eq("id", id)
+                .select()
+                .single();
+
+            console.log("[Duels API] Update result:", { updateData, updateError });
 
             if (updateError) {
+                console.error("[Duels API] Update error:", updateError);
                 return NextResponse.json({ error: "Erro ao entrar no duelo" }, { status: 500 });
             }
 
+            console.log("[Duels API] Successfully joined duel, new opponent_id:", updateData?.opponent_id);
             return NextResponse.json({ success: true, message: "Você entrou no duelo!" });
         }
 

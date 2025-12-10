@@ -211,7 +211,11 @@ CREATE POLICY "Authenticated users can create duels" ON public.duels
 
 DROP POLICY IF EXISTS "Participants can update duels" ON public.duels;
 CREATE POLICY "Participants can update duels" ON public.duels
-  FOR UPDATE USING (auth.uid() = challenger_id OR auth.uid() = opponent_id);
+  FOR UPDATE USING (
+    auth.uid() = challenger_id 
+    OR auth.uid() = opponent_id 
+    OR (status = 'pending' AND opponent_id IS NULL)  -- Permite que qualquer usuário entre em duelos pendentes
+  );
 
 -- Daily Completions: users can read/insert their own
 DROP POLICY IF EXISTS "Users can view their own daily completions" ON public.daily_completions;
