@@ -157,7 +157,13 @@ export default function DuelPage({ params }: PageProps) {
             const refreshData = await refreshResponse.json();
             setDuel(refreshData);
 
-            toast.success("Você entrou no duelo!");
+            toast.success("Você entrou no duelo! Preparando perguntas...");
+
+            // Iniciar o jogo automaticamente após aceitar
+            setTimeout(() => {
+                setGameState("playing");
+                setTimeRemaining(TIME_PER_QUESTION);
+            }, 1000);
 
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Erro ao entrar no duelo");
