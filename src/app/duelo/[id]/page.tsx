@@ -48,6 +48,10 @@ export default function DuelPage({ params }: PageProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [copied, setCopied] = useState(false);
 
+    // Refs para evitar stale closures
+    const scoreRef = useRef(0);
+    const correctAnswersRef = useRef(0);
+
     // Load duel data
     useEffect(() => {
         const loadDuel = async () => {
@@ -104,12 +108,14 @@ export default function DuelPage({ params }: PageProps) {
             const points = calculateAnswerScore({
                 difficulty: question.difficulty as "facil" | "medio" | "dificil",
                 isCorrect: true,
-                currentStreak: correctAnswers,
+                currentStreak: correctAnswersRef.current,
                 timeRemaining: timeLeft,
                 totalTime: TIME_PER_QUESTION,
             });
-            setScore(prev => prev + points);
-            setCorrectAnswers(prev => prev + 1);
+            scoreRef.current += points;
+            correctAnswersRef.current += 1;
+            setScore(scoreRef.current);
+            setCorrectAnswers(correctAnswersRef.current);
         }
 
         // Next question or finish
@@ -130,12 +136,13 @@ export default function DuelPage({ params }: PageProps) {
         setGameState("finished");
 
         try {
+            const finalScore = scoreRef.current;
             const response = await fetch(`/api/duels/${id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     action: "submit_score",
-                    score: score,
+                    score: finalScore,
                 }),
             });
 
@@ -195,8 +202,14 @@ export default function DuelPage({ params }: PageProps) {
 
     // Start playing
     const handleStartPlaying = () => {
+        // Reset scores
+        scoreRef.current = 0;
+        correctAnswersRef.current = 0;
+        setScore(0);
+        setCorrectAnswers(0);
+        setCurrentQuestionIndex(0);
         setGameState("playing");
-        setTimeRemaining(20);
+        setTimeRemaining(TIME_PER_QUESTION);
     };
 
     // Copy share link
@@ -308,7 +321,7 @@ export default function DuelPage({ params }: PageProps) {
                                     <div className="text-6xl mb-4">⏳</div>
                                     <h2 className="text-2xl font-bold mb-2">Aguardando oponente</h2>
                                     <p className="text-muted-foreground mb-4">
-                                        Sua pontuação: <span className="font-bold text-primary">{myScore || score}</span>
+                                        Sua pontuação: <span className="font-bold text-primary">{myScore ?? scoreRef.current}</span>
                                     </p>
                                     <p className="text-sm text-muted-foreground">
                                         Compartilhe o link para seu amigo jogar!
