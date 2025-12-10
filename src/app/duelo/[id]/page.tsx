@@ -70,6 +70,29 @@ export default function DuelPage({ params }: PageProps) {
         loadDuel();
     }, [id]);
 
+    // Polling para atualizar quando oponente entrar (só para challenger esperando)
+    useEffect(() => {
+        if (!duel || !duel.isChallenger || duel.opponent_id || gameState !== "waiting") {
+            return;
+        }
+
+        const pollInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`/api/duels/${id}`);
+                const data = await response.json();
+
+                if (response.ok && data.opponent_id) {
+                    setDuel(data);
+                    toast.success(`${data.opponent?.name?.split(" ")[0] || "Alguém"} aceitou o desafio!`);
+                }
+            } catch (err) {
+                console.error("Polling error:", err);
+            }
+        }, 5000); // Verifica a cada 5 segundos
+
+        return () => clearInterval(pollInterval);
+    }, [id, duel?.isChallenger, duel?.opponent_id, gameState]);
+
     // Handle answer
     const handleAnswer = useCallback((answerIndex: number, timeLeft: number) => {
         if (!duel) return;
@@ -388,11 +411,40 @@ export default function DuelPage({ params }: PageProps) {
 
                         {/* Actions based on user state */}
                         <div className="space-y-3">
-                            {/* User is challenger and hasn't played yet */}
-                            {duel.isChallenger && duel.challenger_score === null && (
-                                <Button onClick={handleStartPlaying} className="w-full h-12 text-lg">
-                                    ▶️ Começar a jogar
-                                </Button>
+                            {/* User is challenger waiting for opponent */}
+                            {duel.isChallenger && !duel.opponent_id && (
+                                <>
+                                    <div className="text-center p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                                        <div className="text-2xl mb-2">⏳</div>
+                                        <p className="text-sm text-yellow-400">
+                                            Aguardando oponente aceitar o desafio...
+                                        </p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Compartilhe o link abaixo para convidar alguém!
+                                        </p>
+                                    </div>
+                                    <Button onClick={handleShareWhatsApp} variant="outline" className="w-full">
+                                        📱 Compartilhar no WhatsApp
+                                    </Button>
+                                    <Button onClick={handleCopyLink} variant="outline" className="w-full">
+                                        {copied ? "✅ Copiado!" : "📋 Copiar link"}
+                                    </Button>
+                                </>
+                            )}
+
+                            {/* User is challenger and opponent has joined, can play now */}
+                            {duel.isChallenger && duel.opponent_id && duel.challenger_score === null && (
+                                <>
+                                    <div className="text-center p-4 bg-green-500/10 border border-green-500/30 rounded-lg mb-2">
+                                        <div className="text-2xl mb-2">✅</div>
+                                        <p className="text-sm text-green-400">
+                                            {duel.opponent?.name?.split(" ")[0] || "Oponente"} aceitou o desafio!
+                                        </p>
+                                    </div>
+                                    <Button onClick={handleStartPlaying} className="w-full h-12 text-lg">
+                                        ▶️ Começar a jogar
+                                    </Button>
+                                </>
                             )}
 
                             {/* User is not in the duel yet */}
@@ -418,8 +470,8 @@ export default function DuelPage({ params }: PageProps) {
                                 </Link>
                             )}
 
-                            {/* Share buttons for challenger */}
-                            {duel.isChallenger && (
+                            {/* Share buttons for challenger after opponent joined */}
+                            {duel.isChallenger && duel.opponent_id && duel.challenger_score !== null && (
                                 <>
                                     <Button onClick={handleShareWhatsApp} variant="outline" className="w-full">
                                         📱 Compartilhar no WhatsApp
