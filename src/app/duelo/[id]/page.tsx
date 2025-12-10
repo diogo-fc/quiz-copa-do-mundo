@@ -319,9 +319,9 @@ export default function DuelPage({ params }: PageProps) {
         );
     }
 
-    // Finished state
-    if (gameState === "finished" || (duel.isChallenger && duel.challenger_score !== null) || (duel.isOpponent && duel.opponent_score !== null)) {
-        const myScore = duel.isChallenger ? duel.challenger_score : duel.opponent_score;
+    // Finished state - PRIORIZA gameState para mostrar resultado imediatamente
+    if (gameState === "finished") {
+        const myScore = duel.isChallenger ? (duel.challenger_score ?? scoreRef.current) : (duel.opponent_score ?? scoreRef.current);
         const opponentScore = duel.isChallenger ? duel.opponent_score : duel.challenger_score;
         const opponentProfile = duel.isChallenger ? duel.opponent : duel.challenger;
         const isWinner = myScore !== null && opponentScore !== null && myScore > opponentScore;
@@ -382,6 +382,64 @@ export default function DuelPage({ params }: PageProps) {
                                 <Button onClick={handleShareWhatsApp} className="w-full" variant="outline">
                                     📱 Compartilhar no WhatsApp
                                 </Button>
+                                <Link href="/duelo/criar" className="block">
+                                    <Button className="w-full">⚔️ Novo Duelo</Button>
+                                </Link>
+                                <Link href="/quiz" className="block">
+                                    <Button variant="ghost" className="w-full">Voltar ao menu</Button>
+                                </Link>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        );
+    }
+
+    // Se o usuário já jogou (tem score salvo no banco), mostrar tela de resultado
+    if ((duel.isChallenger && duel.challenger_score !== null) || (duel.isOpponent && duel.opponent_score !== null)) {
+        const myScore = duel.isChallenger ? duel.challenger_score : duel.opponent_score;
+        const opponentScore = duel.isChallenger ? duel.opponent_score : duel.challenger_score;
+        const opponentProfile = duel.isChallenger ? duel.opponent : duel.challenger;
+        const isWinner = myScore !== null && opponentScore !== null && myScore > opponentScore;
+        const isDraw = myScore !== null && opponentScore !== null && myScore === opponentScore;
+        const isWaiting = opponentScore === null;
+
+        return (
+            <div className="min-h-screen bg-gradient-to-b from-background to-primary/5 p-4">
+                <div className="max-w-lg mx-auto">
+                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                        <CardContent className="p-6 text-center">
+                            {isWaiting ? (
+                                <>
+                                    <div className="text-6xl mb-4">⏳</div>
+                                    <h2 className="text-2xl font-bold mb-2">Aguardando oponente jogar</h2>
+                                    <p className="text-muted-foreground mb-4">
+                                        Sua pontuação: <span className="font-bold text-primary">{myScore}</span>
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="text-6xl mb-4">
+                                        {isWinner ? "🏆" : isDraw ? "🤝" : "😢"}
+                                    </div>
+                                    <h2 className="text-2xl font-bold mb-4">
+                                        {isWinner ? "Você venceu!" : isDraw ? "Empate!" : "Você perdeu!"}
+                                    </h2>
+                                    <div className="flex items-center justify-center gap-8 my-6">
+                                        <div className="text-center">
+                                            <p className="font-medium">Você</p>
+                                            <p className="text-2xl font-bold text-primary">{myScore}</p>
+                                        </div>
+                                        <div className="text-2xl font-bold text-muted-foreground">VS</div>
+                                        <div className="text-center">
+                                            <p className="font-medium">{opponentProfile?.name?.split(" ")[0]}</p>
+                                            <p className="text-2xl font-bold text-primary">{opponentScore}</p>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                            <div className="space-y-3 mt-6">
                                 <Link href="/duelo/criar" className="block">
                                     <Button className="w-full">⚔️ Novo Duelo</Button>
                                 </Link>
