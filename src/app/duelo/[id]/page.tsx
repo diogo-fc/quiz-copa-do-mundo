@@ -28,7 +28,7 @@ interface PageProps {
     params: Promise<{ id: string }>;
 }
 
-const TIME_PER_QUESTION = 20;
+const TOTAL_DUEL_TIME = 40; // 40 segundos total para o duelo
 
 export default function DuelPage({ params }: PageProps) {
     const { id } = use(params);
@@ -44,7 +44,7 @@ export default function DuelPage({ params }: PageProps) {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [score, setScore] = useState(0);
     const [correctAnswers, setCorrectAnswers] = useState(0);
-    const [timeRemaining, setTimeRemaining] = useState(20);
+    const [timeRemaining, setTimeRemaining] = useState(TOTAL_DUEL_TIME);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [copied, setCopied] = useState(false);
 
@@ -127,7 +127,7 @@ export default function DuelPage({ params }: PageProps) {
                 isCorrect: true,
                 currentStreak: correctAnswersRef.current,
                 timeRemaining: timeLeft,
-                totalTime: TIME_PER_QUESTION,
+                totalTime: TOTAL_DUEL_TIME,
             });
             scoreRef.current += points;
             correctAnswersRef.current += 1;
@@ -135,11 +135,10 @@ export default function DuelPage({ params }: PageProps) {
             setCorrectAnswers(correctAnswersRef.current);
         }
 
-        // Next question or finish
+        // Next question or finish (NÃO reseta o timer - tempo é total para o duelo)
         setTimeout(() => {
             if (currentQuestionIndex < duel.questions.length - 1) {
                 setCurrentQuestionIndex(prev => prev + 1);
-                setTimeRemaining(20);
             } else {
                 finishDuel();
             }
@@ -209,7 +208,7 @@ export default function DuelPage({ params }: PageProps) {
             // Iniciar o jogo automaticamente após aceitar
             setTimeout(() => {
                 setGameState("playing");
-                setTimeRemaining(TIME_PER_QUESTION);
+                setTimeRemaining(TOTAL_DUEL_TIME);
             }, 1000);
 
         } catch (err) {
@@ -226,7 +225,7 @@ export default function DuelPage({ params }: PageProps) {
         setCorrectAnswers(0);
         setCurrentQuestionIndex(0);
         setGameState("playing");
-        setTimeRemaining(TIME_PER_QUESTION);
+        setTimeRemaining(TOTAL_DUEL_TIME);
     };
 
     // Copy share link
@@ -245,10 +244,11 @@ export default function DuelPage({ params }: PageProps) {
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
     };
 
-    // Timer expired
+    // Timer expired - encerrar duelo imediatamente
     const handleTimeUp = useCallback(() => {
-        handleAnswer(-1, 0);
-    }, [handleAnswer]);
+        console.log("[Duelo] Tempo esgotado! Encerrando duelo...");
+        finishDuel();
+    }, []);
 
     if (isLoading) {
         return (
@@ -286,7 +286,7 @@ export default function DuelPage({ params }: PageProps) {
                             ⚔️ Duelo
                         </Badge>
                         <Timer
-                            totalSeconds={TIME_PER_QUESTION}
+                            totalSeconds={TOTAL_DUEL_TIME}
                             onTimeUp={handleTimeUp}
                             variant="circle"
                         />
